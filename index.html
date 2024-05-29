@@ -46,14 +46,16 @@
   
   .center-block {
     width: 100%;
-    background: #5584FF;
+    background: #d7d7d7;
   }
   
   .Today {
-    color: #FFF;
+    color: #5584FF;
     font-size: 3vw;
-    margin-left: 10vw;
-    margin-top: 2vw;
+
+    background-color: #fff;
+    width: 25vh;
+    border-radius: 10px 10px 0px 0px;
   }
   
   .Reminder {
@@ -330,11 +332,11 @@
         border: 1px solid #5584FF;
         }
 
-        .form-control[type="date"]::-webkit-inner-spin-button,
-        .form-control[type="date"]::-webkit-calendar-picker-indicator {
-            display: none;
-            -webkit-appearance: none;
+        span .taskText{
+          color: black;
+          font-size: 3vh;
         }
+        
     </style>
 </head>
 <body>
@@ -342,9 +344,10 @@
         <main class="main">
             <div class="container">
                 <div class="center-block" id="contentMain">
-                    <div class="Today">Сегодня</div>
+                    
                     <div class="list">
                         <div class="card mb-4">
+                          <div class="Today">Сегодня</div>
                             <ul id="todayTasksList" class="list-group list-group-flush"></ul>
                         </div>
                         <div class="card mb-4">
@@ -356,7 +359,10 @@
                             <div class="card-body">
                                 <form id="form">
                                     <div class="form-group">
-                                        <input type="text" class="form-control" id="taskInput" placeholder="Текст задачи" required>
+                                        <input type="text" class="form-control" id="taskInput" placeholder="Название задачи" required>
+                                    </div>
+                                    <div class="form-group">
+                                      <input type="text" class="form-control" id="taskText" placeholder="Текст задачи" required>
                                     </div>
                                     <div class="form-group">
                                         <input type="date" class="form-control" id="taskDate" required>
@@ -373,6 +379,7 @@
     <script>
         const form = document.querySelector('#form');
         const taskInput = document.querySelector('#taskInput');
+        const taskText = document.querySelector('#taskText');
         const taskDate = document.querySelector('#taskDate');
         const todayTasksList = document.querySelector('#todayTasksList');
         const upcomingTasksList = document.querySelector('#upcomingTasksList');
@@ -417,6 +424,7 @@
             const newTask = {
                 id: Date.now(),
                 text: taskText,
+                text1: taskText,
                 dueDate: taskDueDate,
                 done: false
             };
@@ -432,6 +440,7 @@
             // Очистка поля ввода и фокус на нем
             taskInput.value = "";
             taskDate.value = "";
+            taskText.value = "";
             taskInput.focus();
 
             // Проверка и перенос задач
@@ -536,20 +545,31 @@
 
         // Отображение задачи в списке
         function renderTask(task) {
-            const cssClass = task.done ? 'task-title task-title--done' : 'task-title';
-            const today = new Date().toISOString().split('T')[0];
-            const taskList = task.dueDate === today ? todayTasksList : upcomingTasksList;
+          const cssClass = task.done ? 'task-title task-title--done' : 'task-title';
+          const today = new Date().toISOString().split('T')[0];
+          const taskList = task.dueDate === today ? todayTasksList : upcomingTasksList;
 
-            const taskHTML = `<li id="${task.id}" class="list-group-item d-flex justify-content-between task-item">
-                <span class="${cssClass}">${task.text}<span class="task-date">(${task.dueDate})</span></span>
-                <span class="task-item__buttons">
-                    <button type="button" data-action="done" class="btn-action done"></button>
-                    <button type="button" data-action="delete" class="btn-action delete"></button>
-                </span>
-            </li>`;
+          // Разбиваем дату на год, месяц и день
+          const [year, month, day] = task.dueDate.split('-');
+          
+          // Форматируем дату в нужном формате: гггг.мм.дд
+          const formattedDate = `${year}.${month}.${day}`;
 
-            taskList.insertAdjacentHTML('beforeend', taskHTML);
-        }
+          const taskHTML = `<li id="${task.id}" class="list-group-item d-flex justify-content-between task-item">
+              <span class="${cssClass}">${task.text}<br/>
+                <span class="taskText">${task.text1}</span>
+                <span class="task-date">
+                  <br/>(${formattedDate})</span></span>
+              <span class="task-item__buttons">
+                  <button type="button" data-action="done" class="btn-action done"></button>
+                  <button type="button" data-action="delete" class="btn-action delete"></button>
+              </span>
+          </li>`;
+
+          taskList.insertAdjacentHTML('beforeend', taskHTML);
+}
+
     </script>
 </body>
 </html>
+
