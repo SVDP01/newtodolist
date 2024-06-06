@@ -332,7 +332,7 @@
         border: 1px solid #5584FF;
         }
 
-        span .taskText{
+        span .task-text{
           color: black;
           font-size: 3vh;
         }
@@ -377,199 +377,188 @@
         </main>
     </div>
     <script>
-        const form = document.querySelector('#form');
-        const taskInput = document.querySelector('#taskInput');
-        const taskText = document.querySelector('#taskText');
-        const taskDate = document.querySelector('#taskDate');
-        const todayTasksList = document.querySelector('#todayTasksList');
-        const upcomingTasksList = document.querySelector('#upcomingTasksList');
-        let tasks = [];
+        document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('#form');
+    const taskTitleInput = document.querySelector('#taskInput');
+    const taskTextInput = document.querySelector('#taskText');
+    const taskDate = document.querySelector('#taskDate');
+    const todayTasksList = document.querySelector('#todayTasksList');
+    const upcomingTasksList = document.querySelector('#upcomingTasksList');
+    let tasks = [];
 
-        // Загрузка задач из localStorage при загрузке страницы
-        if (localStorage.getItem('tasks')) {
-            tasks = JSON.parse(localStorage.getItem('tasks'));
+    // Загрузка задач из localStorage при загрузке страницы
+    if (localStorage.getItem('tasks')) {
+        tasks = JSON.parse(localStorage.getItem('tasks'));
+    }
+
+    // Отображение сохраненных задач при загрузке страницы
+    tasks.forEach(renderTask);
+
+    // Проверка и перенос задач при загрузке страницы
+    checkAndMoveTasks();
+
+    // Проверка наличия задач и отображение соответствующего сообщения
+    checkEmptyList();
+
+    // Обработчик события для добавления новой задачи
+    form.addEventListener('submit', addTask);
+
+    // Обработчики событий для удаления и отметки выполненной задачи
+    todayTasksList.addEventListener('click', handleTaskAction);
+    upcomingTasksList.addEventListener('click', handleTaskAction);
+
+    // Функция добавления новой задачи
+    function addTask(event) {
+        event.preventDefault();
+
+        const taskTitle = taskTitleInput.value.trim();
+        const taskText = taskTextInput.value.trim();
+        const taskDueDate = taskDate.value;
+
+        if (!taskTitle || !taskText || !taskDueDate) {
+            return;
         }
 
-        // Отображение сохраненных задач при загрузке страницы
-        tasks.forEach(function (task) {
-            renderTask(task);
-        });
+        const newTask = {
+            id: Date.now(),
+            title: taskTitle,
+            text: taskText,
+            dueDate: taskDueDate,
+            done: false
+        };
 
-        // Проверка и перенос задач при загрузке страницы
+        tasks.push(newTask);
+
+        // Сохранение задач в localStorage
+        saveLS();
+
+        // Отображение новой задачи
+        renderTask(newTask);
+
+        // Очистка поля ввода и фокус на нем
+        taskTitleInput.value = "";
+        taskTextInput.value = "";
+        taskDate.value = "";
+        taskTitleInput.focus();
+
+        // Проверка и перенос задач
         checkAndMoveTasks();
 
         // Проверка наличия задач и отображение соответствующего сообщения
         checkEmptyList();
+    }
 
-        // Обработчик события для добавления новой задачи
-        form.addEventListener('submit', addTask);
-
-        // Обработчики событий для удаления и отметки выполненной задачи
-        todayTasksList.addEventListener('click', deleteTask);
-        todayTasksList.addEventListener('click', doneTask);
-        upcomingTasksList.addEventListener('click', deleteTask);
-        upcomingTasksList.addEventListener('click', doneTask);
-
-        // Функция добавления новой задачи
-        function addTask(event) {
-            event.preventDefault();
-
-            const taskText = taskInput.value.trim();
-            const taskDueDate = taskDate.value;
-
-            if (!taskText || !taskDueDate) {
-                return;
-            }
-
-            const newTask = {
-                id: Date.now(),
-                text: taskText,
-                text1: taskText,
-                dueDate: taskDueDate,
-                done: false
-            };
-
-            tasks.push(newTask);
-
-            // Сохранение задач в localStorage
-            saveLS();
-
-            // Отображение новой задачи
-            renderTask(newTask);
-
-            // Очистка поля ввода и фокус на нем
-            taskInput.value = "";
-            taskDate.value = "";
-            taskText.value = "";
-            taskInput.focus();
-
-            // Проверка и перенос задач
-            checkAndMoveTasks();
-
-            // Проверка наличия задач и отображение соответствующего сообщения
-            checkEmptyList();
+    // Функция обработки действий с задачей
+    function handleTaskAction(event) {
+        if (event.target.dataset.action === 'delete') {
+            deleteTask(event);
+        } else if (event.target.dataset.action === 'done') {
+            doneTask(event);
         }
+    }
 
-        // Функция удаления задачи
-        function deleteTask(event) {
-            if (event.target.dataset.action !== 'delete') {
-                return;
-            }
+    // Функция удаления задачи
+    function deleteTask(event) {
+        const parentItem = event.target.closest('.list-group-item');
+        const id = Number(parentItem.id);
 
-            const parentItem = event.target.closest('.list-group-item');
-            const id = Number(parentItem.id);
+        const index = tasks.findIndex(task => task.id === id);
 
-            const index = tasks.findIndex(task => task.id === id);
+        tasks.splice(index, 1);
 
-            tasks.splice(index, 1);
+        // Сохранение изменений в localStorage
+        saveLS();
 
-            // Сохранение изменений в localStorage
-            saveLS();
-
-            // Удаление задачи из отображения
-            parentItem.remove();
-
-            // Проверка наличия задач и отображение соответствующего сообщения
-            checkEmptyList();
-        }
-
-        // Функция отметки выполненной/не выполненной задачи
-        function doneTask(event) {
-            if (event.target.dataset.action !== 'done') {
-                return;
-            }
-
-            const parentItem = event.target.closest('.list-group-item');
-            const id = Number(parentItem.id);
-
-            const task = tasks.find(task => task.id === id);
-
-            // Изменение статуса выполнения задачи
-            task.done = !task.done;
-
-            // Сохранение изменений в localStorage
-            saveLS();
-
-            // Переключение класса для визуального отображения выполненной/не выполненной задачи
-            const taskTitle = parentItem.querySelector('.task-title');
-            taskTitle.classList.toggle('task-title--done');
-
-            // Проверка наличия задач и отображение соответствующего сообщения
-            checkEmptyList();
-        }
-
-        // Функция проверки и переноса задач в раздел "Сегодня"
-        function checkAndMoveTasks() {
-            const today = new Date().toISOString().split('T')[0];
-            tasks.forEach(task => {
-                if (task.dueDate === today && !document.getElementById(task.id)) {
-                    renderTask(task);
-                }
-            });
-
-            // Проверка наличия задач и отображение соответствующего сообщения
-            checkEmptyList();
-        }
+        // Удаление задачи из отображения
+        parentItem.remove();
 
         // Проверка наличия задач и отображение соответствующего сообщения
-        function checkEmptyList() {
-            const today = new Date().toISOString().split('T')[0];
-            const todayTasks = tasks.filter(task => task.dueDate === today);
-            const upcomingTasks = tasks.filter(task => task.dueDate !== today);
+        checkEmptyList();
+    }
 
-            // Отображение задач на сегодня
-            if (todayTasks.length === 0) {
-                todayTasksList.innerHTML = `<li id="emptyTodayList" class="list-group-item empty-list">
-                    <img src="https://i.postimg.cc/7hmnn5sg/chil.png" alt="Done" style="width: 10vw; height: 8vw;">
-                    <div class="empty-list__title">Список дел на сегодня пуст</div>
-                </li>`;
-            } else {
-                document.getElementById('emptyTodayList')?.remove();
-            }
+    // Функция отметки выполненной/не выполненной задачи
+    function doneTask(event) {
+        const parentItem = event.target.closest('.list-group-item');
+        const id = Number(parentItem.id);
 
-            // Отображение предстоящих задач
-            if (upcomingTasks.length === 0) {
-                upcomingTasksList.innerHTML = `<li id="emptyUpcomingList" class="list-group-item empty-list">
-                    <img src="https://i.postimg.cc/7hmnn5sg/chil.png" alt="Done" style="width: 10vw; height: 8vw;">
-                    <div class="empty-list__title">Нет предстоящих задач</div>
-                </li>`;
-            } else {
-                document.getElementById('emptyUpcomingList')?.remove();
+        const task = tasks.find(task => task.id === id);
+
+        // Изменение статуса выполнения задачи
+        task.done = !task.done;
+
+        // Сохранение изменений в localStorage
+        saveLS();
+
+        const taskTitle = parentItem.querySelector('.task-title');
+        taskTitle.classList.toggle('task-title--done');
+    }
+
+    function checkAndMoveTasks() {
+        const today = new Date().toISOString().split('T')[0];
+        tasks.forEach(task => {
+            if (task.dueDate === today && !document.getElementById(task.id)) {
+                renderTask(task);
             }
+        });
+
+        checkEmptyList();
+    }
+
+    function checkEmptyList() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayTasks = tasks.filter(task => task.dueDate === today);
+        const upcomingTasks = tasks.filter(task => task.dueDate !== today);
+
+        if (todayTasks.length === 0) {
+            todayTasksList.innerHTML = `<li id="emptyTodayList" class="list-group-item empty-list">
+                <img src="https://i.postimg.cc/7hmnn5sg/chil.png" alt="Done" style="width: 10vw; height: 8vw;">
+                <div class="empty-list__title">Список дел на сегодня пуст</div>
+            </li>`;
+        } else {
+            document.getElementById('emptyTodayList')?.remove();
         }
 
-        // Сохранение задач в localStorage
-        function saveLS() {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
+        if (upcomingTasks.length === 0) {
+            upcomingTasksList.innerHTML = `<li id="emptyUpcomingList" class="list-group-item empty-list">
+                <img src="https://i.postimg.cc/7hmnn5sg/chil.png" alt="Done" style="width: 10vw; height: 8vw;">
+                <div class="empty-list__title">Нет предстоящих задач</div>
+            </li>`;
+        } else {
+            document.getElementById('emptyUpcomingList')?.remove();
         }
+    }
 
-        // Отображение задачи в списке
-        function renderTask(task) {
-          const cssClass = task.done ? 'task-title task-title--done' : 'task-title';
-          const today = new Date().toISOString().split('T')[0];
-          const taskList = task.dueDate === today ? todayTasksList : upcomingTasksList;
+    function saveLS() {
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
 
-          // Разбиваем дату на год, месяц и день
-          const [year, month, day] = task.dueDate.split('-');
-          
-          // Форматируем дату в нужном формате: гггг.мм.дд
-          const formattedDate = `${year}.${month}.${day}`;
+    function renderTask(task) {
+        const cssClass = task.done ? 'task-title task-title--done' : 'task-title';
+        const today = new Date().toISOString().split('T')[0];
+        const taskList = task.dueDate === today ? todayTasksList : upcomingTasksList;
 
-          const taskHTML = `<li id="${task.id}" class="list-group-item d-flex justify-content-between task-item">
-              <span class="${cssClass}">${task.text}<br/>
-                <span class="taskText">${task.text1}</span>
-                <span class="task-date">
-                  <br/>(${formattedDate})</span></span>
-              <span class="task-item__buttons">
-                  <button type="button" data-action="done" class="btn-action done"></button>
-                  <button type="button" data-action="delete" class="btn-action delete"></button>
-              </span>
-          </li>`;
+        const [year, month, day] = task.dueDate.split('-');
+        
+        const formattedDate = `${year}.${month}.${day}`;
 
-          taskList.insertAdjacentHTML('beforeend', taskHTML);
-}
+        const taskHTML = `<li id="${task.id}" class="list-group-item d-flex justify-content-between task-item">
+            <span class="${cssClass}">${task.title}<br/>
+                <span class="task-text">${task.text}</span><br/>
+                <span class="task-date">(${formattedDate})</span></span>
+            <span class="task-item__buttons">
+                <button type="button" data-action="done" class="btn-action done"></button>
+                <button type="button" data-action="delete" class="btn-action delete"></button>
+            </span>
+        </li>`;
+
+        taskList.insertAdjacentHTML('beforeend', taskHTML);
+    }
+});
 
     </script>
 </body>
 </html>
+
+
+
 
